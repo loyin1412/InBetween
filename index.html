@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>往来之间 · 唐诗互文考</title>
+<style>
+/* ============ 基底 ============ */
+:root{
+  --paper:#f5f0e6;
+  --paper-deep:#efe7d6;
+  --ink:#2b2b2b;
+  --ink-soft:#5a544a;
+  --cinnabar:#b03a2e;
+  --bai:#7d7596;   /* 白居易 雾山紫 */
+  --yuan:#3d5a80;  /* 元稹 黛蓝 */
+  --xue:#c96f7e;   /* 薛涛 桃花绯 */
+  --yu:#5e8c7a;    /* 鱼玄机 竹青 */
+  --hair:rgba(43,43,43,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:"Noto Serif SC","Source Han Serif SC","STSong","SimSun",serif;
+  background:var(--paper);
+  color:var(--ink);
+  overflow-x:hidden;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(43,43,43,.012) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgba(43,43,43,.01) 0 1px, transparent 1px 7px);
+}
+::selection{background:var(--cinnabar);color:var(--paper);}
+a{color:inherit;text-decoration:none;}
+.v-text{writing-mode:vertical-rl;letter-spacing:.35em;}
+
+/* ============ 侧栏卷目 ============ */
+#sidenav{
+  position:fixed;right:26px;top:50%;transform:translateY(-50%);
+  z-index:99;display:flex;flex-direction:column;gap:26px;
+}
+#sidenav a{
+  display:flex;align-items:center;gap:10px;
+  font-size:12px;color:var(--ink-soft);opacity:.75;
+  transition:opacity .3s, color .3s;
+  writing-mode:horizontal-tb;flex-direction:row-reverse;
+  background:rgba(245,240,230,.92);
+  padding:5px 9px;border-radius:999px;
+  box-shadow:0 1px 6px rgba(43,43,43,.12);
+}
+#sidenav a .dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1px solid var(--ink-soft);background:transparent;
+  transition:all .3s;flex:none;
+}
+#sidenav a.on{opacity:1;color:var(--cinnabar);}
+#sidenav a.on .dot{background:var(--cinnabar);border-color:var(--cinnabar);}
+@media (max-width:900px){#sidenav{display:none;}}
+
+/* ============ 卷间分隔 ============ */
+.juan-mark{
+  display:flex;align-items:center;justify-content:center;gap:18px;
+  padding:90px 0 30px;color:var(--ink-soft);
+}
+.juan-mark .line{width:120px;height:1px;background:var(--hair);}
+.juan-mark .no{
+  font-size:13px;letter-spacing:.5em;color:var(--ink-soft);
+}
+.juan-mark .seal{
+  font-size:15px;color:var(--cinnabar);
+  border:1px solid var(--cinnabar);padding:3px 8px 2px;
+  letter-spacing:.1em;line-height:1;
+}
+
+/* 滚动渐显 */
+.reveal{opacity:0;transform:translateY(36px);transition:opacity 1.1s ease,transform 1.1s ease;}
+.reveal.shown{opacity:1;transform:none;}
+
+/* ============ 卷一 · 起 ============ */
+#hero{
+  min-height:100vh;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#hero .stage{
+  display:grid;grid-template-columns:auto minmax(150px,260px) auto;
+  align-items:center;gap:0;width:min(1200px,94vw);position:relative;
+}
+#hero figure{
+  position:relative;width:min(360px,34vw);
+}
+#hero figure img{
+  width:100%;display:block;border-radius:6px;
+  box-shadow:0 24px 60px -18px rgba(43,43,43,.45);
+}
+#hero figure figcaption{
+  position:absolute;bottom:-34px;width:100%;text-align:center;
+  font-size:14px;color:var(--ink-soft);letter-spacing:.4em;
+}
+#hero .center{
+  position:relative;text-align:center;padding:0 10px;z-index:2;
+}
+#hero h1{
+  display:inline-block;font-size:clamp(44px,6vw,76px);
+  font-weight:700;color:var(--ink);line-height:1.25;
+}
+#hero .sub{
+  margin-top:26px;font-size:15px;color:var(--ink-soft);letter-spacing:.6em;
+}
+#hero .seal{
+  margin-top:34px;display:inline-block;
+  font-size:17px;color:#fff;background:var(--cinnabar);
+  padding:10px 6px;line-height:1.1;border-radius:3px;
+  box-shadow:2px 3px 0 rgba(43,43,43,.25);
+}
+#hero svg.thread{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+#scroll-hint{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  font-size:12px;letter-spacing:.5em;color:var(--ink-soft);
+  animation:bob 2.4s ease-in-out infinite;opacity:.7;
+}
+@keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,10px);}}
+
+/* ============ 卷二 · 两对魂魄 ============ */
+.pair-section{position:relative;overflow:hidden;}
+.pair-section .inner{
+  width:min(1200px,92vw);margin:0 auto;
+  display:grid;grid-template-columns:280px 1fr 280px;
+  align-items:center;gap:24px;min-height:78vh;position:relative;
+}
+.pair-section.flipped .inner{grid-template-columns:280px 1fr 280px;}
+.pair-figure{position:relative;z-index:2;}
+.pair-figure img{
+  width:100%;display:block;border-radius:6px;
+  box-shadow:0 20px 50px -14px rgba(43,43,43,.4);
+}
+.pair-figure .tag{
+  position:absolute;top:14px;writing-mode:vertical-rl;
+  font-size:15px;color:#fff;padding:10px 5px;border-radius:3px;
+  letter-spacing:.2em;
+}
+.pair-mid{position:relative;text-align:center;z-index:2;padding:20px 0;}
+.pair-mid .who{
+  font-size:20px;letter-spacing:.5em;margin-bottom:22px;
+}
+.pair-mid .bignum{
+  font-size:clamp(52px,7vw,84px);font-weight:700;line-height:1;
+}
+.pair-mid .unit{font-size:16px;color:var(--ink-soft);letter-spacing:.4em;margin-top:12px;}
+.pair-mid blockquote{
+  margin:34px auto 0;font-size:16px;color:var(--ink-soft);
+  letter-spacing:.3em;line-height:2.1;max-width:20em;
+}
+.pair-mid blockquote cite{
+  display:block;margin-top:8px;font-style:normal;font-size:12px;opacity:.75;letter-spacing:.25em;
+}
+.pair-threads{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;opacity:0;transition:opacity 1.6s ease;}
+.shown .pair-threads{opacity:1;}
+.thread-path{fill:none;stroke-width:.7;}
+
+/* 薛鱼段花瓣 */
+.petals{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1;}
+.petal{
+  position:absolute;top:-24px;border-radius:62% 38% 55% 45%;
+  background:radial-gradient(circle at 35% 35%, #f3c3c9, #d98f9b);
+  opacity:.55;animation:fall linear infinite;
+}
+@keyframes fall{
+  0%{transform:translate(0,-5vh) rotate(0deg);}
+  25%{transform:translate(3vw,25vh) rotate(80deg);}
+  50%{transform:translate(-2vw,55vh) rotate(160deg);}
+  75%{transform:translate(2.5vw,82vh) rotate(250deg);}
+  100%{transform:translate(0,108vh) rotate(340deg);}
+}
+
+/* ============ 卷三 · 应答墙 ============ */
+#wall{position:relative;padding-bottom:60px;}
+#wall .inner{width:min(1080px,92vw);margin:0 auto;}
+.wall-head{text-align:center;margin-bottom:36px;}
+.wall-head h2{font-size:30px;letter-spacing:.45em;display:inline-block;}
+.wall-head p{margin-top:14px;font-size:13px;color:var(--ink-soft);letter-spacing:.25em;}
+.searchbar{
+  display:flex;justify-content:center;gap:14px;margin:0 auto 8px;flex-wrap:wrap;
+}
+.searchbar input{
+  width:min(420px,80vw);padding:12px 18px;font-size:15px;
+  font-family:inherit;color:var(--ink);
+  background:rgba(255,255,255,.55);border:1px solid var(--hair);
+  border-radius:999px;outline:none;letter-spacing:.1em;
+  transition:border-color .3s, box-shadow .3s;
+}
+.searchbar input:focus{border-color:var(--cinnabar);box-shadow:0 0 0 3px rgba(176,58,46,.12);}
+.pair-filter{display:flex;justify-content:center;gap:10px;margin:14px 0 26px;flex-wrap:wrap;}
+.pair-filter button{
+  font-family:inherit;font-size:13px;letter-spacing:.2em;cursor:pointer;
+  padding:7px 18px;border-radius:999px;border:1px solid var(--hair);
+  background:transparent;color:var(--ink-soft);transition:all .25s;
+}
+.pair-filter button.on{border-color:var(--cinnabar);color:var(--cinnabar);background:rgba(176,58,46,.07);}
+.result-count{text-align:center;font-size:12px;color:var(--ink-soft);letter-spacing:.3em;margin-bottom:30px;}
+
+/* 句对卡 */
+.echo-list{display:grid;grid-template-columns:1fr 1fr;gap:26px 44px;}
+@media (max-width:760px){.echo-list{grid-template-columns:1fr;}}
+.echo{
+  position:relative;background:rgba(255,255,255,.45);
+  border:1px solid var(--hair);border-radius:8px;
+  padding:22px 24px 20px;
+  transition:transform .35s ease, box-shadow .35s ease;
+}
+.echo:hover{transform:translateY(-4px);box-shadow:0 16px 34px -16px rgba(43,43,43,.35);}
+.echo .row{display:flex;align-items:baseline;gap:12px;padding:7px 0;}
+.echo .poet{
+  flex:none;font-size:11px;letter-spacing:.15em;color:#fff;
+  padding:3px 8px 2px;border-radius:3px;line-height:1.3;
+}
+.echo .poet.bai{background:var(--bai);}
+.echo .poet.yuan{background:var(--yuan);}
+.echo .poet.xue{background:var(--xue);}
+.echo .poet.yu{background:var(--yu);}
+.echo .verse{font-size:17px;line-height:1.9;letter-spacing:.08em;}
+.echo .verse .hl{color:var(--cinnabar);font-weight:700;}
+.echo .title{
+  display:block;margin-top:10px;font-size:11.5px;color:var(--ink-soft);
+  letter-spacing:.12em;line-height:1.8;
+}
+.echo .knot{
+  position:absolute;left:50%;top:50%;width:7px;height:7px;
+  background:var(--cinnabar);border-radius:50%;opacity:.5;
+  transform:translate(-50%,-50%);pointer-events:none;
+}
+.pager{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:44px;flex-wrap:wrap;}
+.pager button{
+  font-family:inherit;font-size:13px;letter-spacing:.25em;cursor:pointer;
+  padding:9px 22px;border:1px solid var(--hair);border-radius:999px;
+  background:transparent;color:var(--ink-soft);transition:all .25s;
+}
+.pager button:hover:not(:disabled){border-color:var(--cinnabar);color:var(--cinnabar);}
+.pager button:disabled{opacity:.35;cursor:default;}
+.pager .pageinfo{font-size:12.5px;color:var(--ink-soft);letter-spacing:.2em;}
+.pager .page-jump{
+  display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);letter-spacing:.15em;
+}
+.pager .page-jump input{
+  width:64px;padding:7px 10px;font-family:inherit;font-size:13px;text-align:center;
+  color:var(--ink);background:rgba(255,255,255,.55);
+  border:1px solid var(--hair);border-radius:6px;outline:none;transition:border-color .3s;
+}
+.pager .page-jump input:focus{border-color:var(--cinnabar);}
+
+/* 典型句对引导卡 */
+.featured{
+  position:relative;margin:0 auto 40px;max-width:720px;
+  background:linear-gradient(135deg, rgba(255,255,255,.65), rgba(255,255,255,.35));
+  border:1px solid var(--cinnabar);border-radius:12px;
+  padding:30px 34px 24px;cursor:pointer;
+  transition:transform .4s ease, box-shadow .4s ease;
+}
+.featured:hover{transform:translateY(-4px);box-shadow:0 18px 40px -16px rgba(176,58,46,.3);}
+.featured .f-label{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--cinnabar);color:var(--paper);
+  font-size:12px;letter-spacing:.4em;padding:5px 18px 4px 22px;border-radius:999px;
+}
+.featured .f-row{display:flex;align-items:baseline;gap:14px;padding:9px 0;}
+.featured .poet{
+  flex:none;font-size:12px;letter-spacing:.15em;color:#fff;
+  padding:4px 10px 3px;border-radius:3px;line-height:1.3;
+}
+.featured .verse{font-size:20px;line-height:1.9;letter-spacing:.1em;}
+.featured .verse .hl{color:var(--cinnabar);font-weight:700;}
+.featured .f-title{
+  display:block;text-align:center;margin-top:12px;
+  font-size:12px;color:var(--ink-soft);letter-spacing:.18em;
+}
+.featured .f-hint{
+  display:block;text-align:center;margin-top:14px;padding-top:14px;
+  border-top:1px dashed var(--hair);
+  font-size:12px;color:var(--cinnabar);letter-spacing:.3em;
+}
+
+/* ============ 卷四 · 千缕图 ============ */
+#threads{padding-bottom:40px;}
+#threads .inner{width:min(1080px,84vw);margin:0 auto;}
+.threads-head{text-align:center;margin-bottom:26px;}
+.threads-head h2{font-size:30px;letter-spacing:.45em;display:inline-block;}
+.threads-head p{margin-top:14px;font-size:13px;color:var(--ink-soft);letter-spacing:.25em;}
+.threads-ctrl{
+  display:flex;justify-content:center;align-items:center;gap:26px;
+  flex-wrap:wrap;margin-bottom:10px;
+}
+.threads-ctrl .pair-toggle{display:flex;gap:10px;}
+.threads-ctrl .pair-toggle button{
+  font-family:inherit;font-size:13px;letter-spacing:.2em;cursor:pointer;
+  padding:7px 18px;border-radius:999px;border:1px solid var(--hair);
+  background:transparent;color:var(--ink-soft);transition:all .25s;
+}
+.threads-ctrl .pair-toggle button.on{border-color:var(--cinnabar);color:var(--cinnabar);background:rgba(176,58,46,.07);}
+.threads-ctrl .slider-box{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--ink-soft);letter-spacing:.15em;}
+.threads-ctrl input[type=range]{
+  width:180px;accent-color:var(--cinnabar);cursor:pointer;
+}
+#chart{
+  width:100%;height:640px;
+  background:rgba(255,255,255,.3);
+  border:1px solid var(--hair);border-radius:10px;
+}
+.threads-note{
+  text-align:center;margin-top:16px;font-size:12px;color:var(--ink-soft);letter-spacing:.2em;
+}
+
+/* ============ 卷五 · 附录 ============ */
+#appendix{padding-bottom:40px;}
+#appendix .inner{width:min(1150px,92vw);margin:0 auto;}
+.appx-head{text-align:center;margin-bottom:40px;}
+.appx-head h2{font-size:30px;letter-spacing:.45em;display:inline-block;}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;}
+@media (max-width:1000px){.cards{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:560px){.cards{grid-template-columns:1fr;}}
+.pcard{
+  background:rgba(255,255,255,.5);border:1px solid var(--hair);
+  border-radius:10px;overflow:hidden;
+  transition:transform .4s ease, box-shadow .4s ease;
+}
+.pcard:hover{transform:translateY(-6px);box-shadow:0 20px 44px -18px rgba(43,43,43,.4);}
+.pcard .imgbox{height:300px;overflow:hidden;}
+.pcard .imgbox img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .8s ease;}
+.pcard:hover .imgbox img{transform:scale(1.05);}
+.pcard .body{padding:18px 20px 20px;}
+.pcard h3{font-size:19px;letter-spacing:.3em;margin-bottom:6px;}
+.pcard .colorline{width:34px;height:2px;margin:0 0 12px;}
+.pcard p{font-size:13px;line-height:2;color:var(--ink-soft);letter-spacing:.08em;}
+.pcard .stat{margin-top:12px;font-size:12px;color:var(--ink-soft);letter-spacing:.15em;}
+.pcard .stat b{color:var(--cinnabar);font-size:15px;}
+.data-note{
+  margin:44px auto 0;max-width:46em;text-align:center;
+  font-size:12.5px;line-height:2.3;color:var(--ink-soft);letter-spacing:.12em;
+}
+
+/* ============ 尾声 ============ */
+footer{
+  margin-top:80px;padding:60px 20px 46px;text-align:center;
+  border-top:1px solid var(--hair);color:var(--ink-soft);
+}
+footer .fin{
+  font-size:22px;letter-spacing:.5em;margin-bottom:18px;
+}
+footer p{font-size:12px;letter-spacing:.25em;line-height:2.2;}
+</style>
+</head>
+<body>
+
+<!-- 侧栏卷目 -->
+<nav id="sidenav">
+  <a href="#hero" data-sec="hero"><span>起</span><span class="dot"></span></a>
+  <a href="#pair-yb" data-sec="pair-yb"><span>魂魄</span><span class="dot"></span></a>
+  <a href="#wall" data-sec="wall"><span>应答</span><span class="dot"></span></a>
+  <a href="#threads" data-sec="threads"><span>千缕</span><span class="dot"></span></a>
+  <a href="#appendix" data-sec="appendix"><span>附录</span><span class="dot"></span></a>
+</nav>
+
+<!-- ============ 卷一 · 起 ============ -->
+<section id="hero">
+  <div class="stage">
+    <figure>
+      <img src="assets/白居易.jpg" alt="白居易">
+      <figcaption>白居易</figcaption>
+    </figure>
+    <div class="center">
+      <svg class="thread" viewBox="0 0 400 600" preserveAspectRatio="none">
+        <path id="hero-thread" d="M 20,120 C 150,300 250,340 380,520"
+              stroke="#b03a2e" stroke-width="1.4" fill="none"
+              stroke-dasharray="1200" stroke-dashoffset="1200" opacity=".8"/>
+      </svg>
+      <h1 class="v-text">往来之间</h1>
+      <div class="sub">一句出口 一声有应</div>
+      <span class="seal v-text">互文</span>
+    </div>
+    <figure>
+      <img src="assets/元稹.jpg" alt="元稹">
+      <figcaption>元　稹</figcaption>
+    </figure>
+  </div>
+  <div id="scroll-hint">向下展卷</div>
+</section>
+
+<!-- ============ 卷二 · 两对魂魄 ============ -->
+<div class="juan-mark"><span class="line"></span><span class="no">卷二</span><span class="seal">两对魂魄</span><span class="line"></span></div>
+
+<section id="pair-yb" class="pair-section reveal">
+  <div class="inner">
+    <div class="pair-figure">
+      <img src="assets/白居易.jpg" alt="白居易">
+      <span class="tag" style="background:var(--bai);left:14px;">白居易</span>
+    </div>
+    <div class="pair-mid">
+      <svg class="pair-threads" id="threads-yb" viewBox="0 0 800 500" preserveAspectRatio="none"></svg>
+      <div class="who">白 居 易 × 元 稹</div>
+      <div class="bignum" id="num-yb" data-target="37001" style="color:var(--yuan);">0</div>
+      <div class="unit">次 应 和</div>
+      <blockquote>
+        君埋泉下泥销骨，我寄人间雪满头。
+        <cite>—— 白居易《梦微之》</cite>
+      </blockquote>
+    </div>
+    <div class="pair-figure">
+      <img src="assets/元稹.jpg" alt="元稹">
+      <span class="tag" style="background:var(--yuan);right:14px;">元稹</span>
+    </div>
+  </div>
+</section>
+
+<section id="pair-xy" class="pair-section flipped reveal">
+  <div class="petals" id="petals"></div>
+  <div class="inner">
+    <div class="pair-figure">
+      <img src="assets/薛涛.jpg" alt="薛涛">
+      <span class="tag" style="background:var(--xue);left:14px;">薛涛</span>
+    </div>
+    <div class="pair-mid">
+      <svg class="pair-threads" id="threads-xy" viewBox="0 0 800 500" preserveAspectRatio="none"></svg>
+      <div class="who">薛 涛 × 鱼 玄 机</div>
+      <div class="bignum" id="num-xy" data-target="30" style="color:var(--xue);">0</div>
+      <div class="unit">声 轻 应</div>
+      <blockquote>
+        花开不同赏，花落不同悲。欲问相思处，花开花落时。
+        <cite>—— 薛涛《春望词》</cite>
+      </blockquote>
+    </div>
+    <div class="pair-figure">
+      <img src="assets/鱼玄机.jpg" alt="鱼玄机">
+      <span class="tag" style="background:var(--yu);right:14px;">鱼玄机</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 卷三 · 应答墙 ============ -->
+<div class="juan-mark"><span class="line"></span><span class="no">卷三</span><span class="seal">应答墙</span><span class="line"></span></div>
+
+<section id="wall" class="reveal">
+  <div class="inner">
+    <div class="wall-head">
+      <h2>应 答 墙</h2>
+      <p>三万七千零三十一对诗句 · 朱砂所点，即互文处</p>
+    </div>
+    <div class="searchbar">
+      <input id="search" type="text" placeholder="搜诗题或诗句……如「琵琶」「长恨」">
+    </div>
+    <div class="pair-filter" id="pair-filter">
+      <button data-pair="all" class="on">全部</button>
+      <button data-pair="yb">白居易 × 元稹</button>
+      <button data-pair="xy">薛涛 × 鱼玄机</button>
+    </div>
+    <div class="result-count" id="result-count"></div>
+    <div class="featured" id="featured" title="看看这一对"></div>
+    <div class="echo-list" id="echo-list"></div>
+    <div class="pager">
+      <button id="prev">上一页</button>
+      <span class="pageinfo" id="pageinfo"></span>
+      <button id="next">下一页</button>
+      <span class="page-jump">跳至 <input id="page-input" type="number" min="1" value="1"> 页</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 卷四 · 千缕图 ============ -->
+<div class="juan-mark"><span class="line"></span><span class="no">卷四</span><span class="seal">千缕图</span><span class="line"></span></div>
+
+<section id="threads" class="reveal">
+  <div class="inner">
+    <div class="threads-head">
+      <h2>千 缕 图</h2>
+      <p>左为前者之诗，右为应者之诗，一缕即一次应和 · 点一缕可去应答墙看它</p>
+    </div>
+    <div class="threads-ctrl">
+      <div class="pair-toggle" id="thread-toggle">
+        <button data-pair="yb" class="on">白居易 × 元稹</button>
+        <button data-pair="xy">薛涛 × 鱼玄机</button>
+      </div>
+      <div class="slider-box">
+        <span>缕数</span>
+        <input type="range" id="thread-count" min="20" max="100" step="10" value="40">
+        <span id="thread-count-label">40 缕</span>
+      </div>
+    </div>
+    <div id="chart"></div>
+    <div class="threads-note">点之大小为应和之数 · 点击一缕，可跳转应答墙细读</div>
+  </div>
+</section>
+
+<!-- ============ 卷五 · 附录 ============ -->
+<div class="juan-mark"><span class="line"></span><span class="no">卷五</span><span class="seal">附录</span><span class="line"></span></div>
+
+<section id="appendix" class="reveal">
+  <div class="inner">
+    <div class="appx-head"><h2>四 位 诗 人</h2></div>
+    <div class="cards" id="poet-cards"></div>
+    <div class="data-note" id="data-note"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="fin">往来之间</div>
+  <p>一句出口，一声有应。<br>诗 · 白居易 元稹 薛涛 鱼玄机 ｜ 绘 · 墨魂 ｜ 织 · 互文数据</p>
+</footer>
+
+<script src="lib/echarts.min.js"></script>
+<script src="data/data.js"></script>
+<script>
+/* ================================================================
+   往来之间 · 唐诗互文考
+   ================================================================ */
+(function(){
+"use strict";
+
+var DATA = window.__DATA__;
+var PAIRS = DATA.pairs;
+var POEMS = DATA.poems;
+
+/* ---------- 公共字高亮 ---------- */
+var STOP = {};
+"之乎者也兮矣焉哉耶欤夫盖".split("").forEach(function(c){STOP[c]=1;});
+var PUNCT = /[\s，。！？；：、（）《》〈〉「」『』【】“”‘’—…·,.!?;:()\[\]0-9]/;
+function keep(c){ return !PUNCT.test(c) && !STOP[c]; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function markLine(line, otherSet){
+  var out = "";
+  for (var i=0;i<line.length;i++){
+    var c = line[i];
+    if (keep(c) && otherSet[c]) out += '<b class="hl">'+esc(c)+'</b>';
+    else out += esc(c);
+  }
+  return out;
+}
+function charSet(line){
+  var s = {};
+  for (var i=0;i<line.length;i++){ var c=line[i]; if(keep(c)) s[c]=1; }
+  return s;
+}
+
+var POET_CLASS = {"白居易":"bai","元稹":"yuan","薛涛":"xue","鱼玄机":"yu"};
+var POET_COLOR = {"白居易":"#7d7596","元稹":"#3d5a80","薛涛":"#c96f7e","鱼玄机":"#5e8c7a"};
+
+/* ---------- 滚动渐显 ---------- */
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if (e.isIntersecting){ e.target.classList.add("shown"); }
+  });
+},{threshold:.05});
+document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+
+/* ---------- 侧栏高亮 ---------- */
+var navLinks = document.querySelectorAll("#sidenav a");
+var secIds = ["hero","pair-yb","wall","threads","appendix"];
+var secIO = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if (e.isIntersecting){
+      navLinks.forEach(function(a){
+        a.classList.toggle("on", a.getAttribute("data-sec")===e.target.id ||
+          (e.target.id==="pair-xy" && a.getAttribute("data-sec")==="pair-yb"));
+      });
+    }
+  });
+},{threshold:.35});
+secIds.forEach(function(id){ var el=document.getElementById(id); if(el) secIO.observe(el); });
+
+/* ---------- 卷一：红线生长 ---------- */
+window.addEventListener("load", function(){
+  var t = document.getElementById("hero-thread");
+  t.style.transition = "stroke-dashoffset 2.8s ease .5s";
+  t.style.strokeDashoffset = "0";
+});
+
+/* ---------- 卷二：丝线 + 数字 ---------- */
+function drawThreads(svgId, count, colorA, colorB){
+  var svg = document.getElementById(svgId);
+  var ns = "http://www.w3.org/2000/svg";
+  for (var i=0;i<count;i++){
+    var y1 = 60 + Math.random()*380;
+    var y2 = 60 + Math.random()*380;
+    var cx = 400 + (Math.random()-0.5)*220;
+    var cy = (y1+y2)/2 + (Math.random()-0.5)*180;
+    var p = document.createElementNS(ns,"path");
+    p.setAttribute("d","M 0,"+y1+" Q "+cx+","+cy+" 800,"+y2);
+    p.setAttribute("class","thread-path");
+    var col = (i%2===0)?colorA:colorB;
+    p.setAttribute("stroke", col);
+    p.setAttribute("opacity", (0.18+Math.random()*0.35).toFixed(2));
+    var len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    svg.appendChild(p);
+  }
+  svg.querySelectorAll("path").forEach(function(p,i){
+    p.style.transition = "stroke-dashoffset "+(2+Math.random()*2)+"s ease "+(i*0.05)+"s";
+    requestAnimationFrame(function(){ p.style.strokeDashoffset = "0"; });
+  });
+}
+function countUp(el, target, dur){
+  var t0 = null;
+  function step(ts){
+    if(!t0) t0 = ts;
+    var k = Math.min(1,(ts-t0)/dur);
+    var eased = 1-Math.pow(1-k,3);
+    el.textContent = Math.round(target*eased).toLocaleString("zh-Hans-CN").replace(/,/g,"");
+    if(k<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+var drawn = {};
+var io2 = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(!e.isIntersecting || drawn[e.target.id]) return;
+    drawn[e.target.id]=1;
+    if(e.target.id==="pair-yb"){
+      drawThreads("threads-yb", 46, "#7d7596", "#3d5a80");
+      countUp(document.getElementById("num-yb"), 37001, 2200);
+    }else if(e.target.id==="pair-xy"){
+      drawThreads("threads-xy", 8, "#c96f7e", "#5e8c7a");
+      countUp(document.getElementById("num-xy"), 30, 1200);
+    }
+  });
+},{threshold:.3});
+io2.observe(document.getElementById("pair-yb"));
+io2.observe(document.getElementById("pair-xy"));
+
+/* 花瓣 */
+(function(){
+  var box = document.getElementById("petals");
+  for(var i=0;i<14;i++){
+    var d = document.createElement("div");
+    d.className="petal";
+    var s = 8+Math.random()*12;
+    d.style.width=s+"px"; d.style.height=(s*0.72)+"px";
+    d.style.left=(Math.random()*100)+"%";
+    d.style.animationDuration=(7+Math.random()*9)+"s";
+    d.style.animationDelay=(-Math.random()*12)+"s";
+    box.appendChild(d);
+  }
+})();
+
+/* ---------- 卷三：应答墙 ---------- */
+var PAGE = 8;
+var state = { q:"", pair:"all", page:1 };
+var filtered = PAIRS;
+
+/* 找公共字最多的一对作"典型" */
+function sharedCount(p){
+  var a = charSet(p.lineA), b = charSet(p.lineB), n = 0;
+  for (var c in a){ if(b[c]) n++; }
+  return n;
+}
+var featuredPair = null, featuredMax = -1;
+PAIRS.forEach(function(p){
+  var n = sharedCount(p);
+  if(n > featuredMax){ featuredMax = n; featuredPair = p; }
+});
+
+function renderFeatured(){
+  var box = document.getElementById("featured");
+  if(!filtered.length){ box.style.display="none"; return; }
+  box.style.display="";
+  /* 从当前筛选结果中取公共字最多的一对 */
+  var best = null, max = -1;
+  var step = Math.max(1, Math.floor(filtered.length/400));
+  for(var i=0;i<filtered.length;i+=step){
+    var n = sharedCount(filtered[i]);
+    if(n>max){ max=n; best=filtered[i]; }
+  }
+  if(!best) best = featuredPair;
+  var setA = charSet(best.lineA), setB = charSet(best.lineB);
+  box.innerHTML =
+    '<span class="f-label">卷首典型</span>'
+    + '<div class="f-row"><span class="poet '+POET_CLASS[best.poetA]+'" style="background:'+POET_COLOR[best.poetA]+'">'+best.poetA+'</span>'
+    + '<span class="verse">'+markLine(best.lineA,setB)+'</span></div>'
+    + '<div class="f-row"><span class="poet '+POET_CLASS[best.poetB]+'" style="background:'+POET_COLOR[best.poetB]+'">'+best.poetB+'</span>'
+    + '<span class="verse">'+markLine(best.lineB,setA)+'</span></div>'
+    + '<span class="f-title">《'+esc(best.titleA)+'》 ⇄ 《'+esc(best.titleB)+'》 · 共鸣 '+max+' 字</span>'
+    + '<span class="f-hint">万千应和，且从这一对读起 · 往下翻页</span>';
+  box.onclick = function(){
+    document.getElementById("echo-list").scrollIntoView({behavior:"smooth", block:"start"});
+  };
+}
+
+function applyFilter(){
+  var q = state.q.trim();
+  filtered = PAIRS.filter(function(p){
+    if(state.pair==="yb" && !(p.poetA==="白居易")) return false;
+    if(state.pair==="xy" && !(p.poetA==="薛涛")) return false;
+    if(q){
+      var hay = p.titleA+p.lineA+p.titleB+p.lineB;
+      if(hay.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+  state.page = 1;
+  renderFeatured();
+  renderWall();
+}
+function renderWall(){
+  var list = document.getElementById("echo-list");
+  var total = filtered.length;
+  var pages = Math.max(1, Math.ceil(total/PAGE));
+  if(state.page>pages) state.page = pages;
+  var start = (state.page-1)*PAGE;
+  var slice = filtered.slice(start, start+PAGE);
+
+  var html = "";
+  slice.forEach(function(p){
+    var setA = charSet(p.lineA), setB = charSet(p.lineB);
+    html += '<div class="echo"><span class="knot"></span>'
+      + '<div class="row"><span class="poet '+POET_CLASS[p.poetA]+'">'+p.poetA+'</span>'
+      + '<span class="verse">'+markLine(p.lineA,setB)+'</span></div>'
+      + '<div class="row"><span class="poet '+POET_CLASS[p.poetB]+'">'+p.poetB+'</span>'
+      + '<span class="verse">'+markLine(p.lineB,setA)+'</span></div>'
+      + '<span class="title">《'+esc(p.titleA)+'》 ⇄ 《'+esc(p.titleB)+'》</span>'
+      + '</div>';
+  });
+  list.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:var(--ink-soft);letter-spacing:.3em;padding:40px 0;">此处暂无应答</p>';
+
+  document.getElementById("result-count").textContent =
+    "共 " + total.toLocaleString("zh-Hans-CN") + " 对";
+  document.getElementById("pageinfo").textContent = state.page + " / " + pages;
+  document.getElementById("prev").disabled = state.page<=1;
+  document.getElementById("next").disabled = state.page>=pages;
+  var pin = document.getElementById("page-input");
+  pin.value = state.page; pin.max = pages;
+}
+var debounce;
+document.getElementById("search").addEventListener("input", function(e){
+  clearTimeout(debounce);
+  debounce = setTimeout(function(){ state.q = e.target.value; applyFilter(); }, 250);
+});
+document.getElementById("pair-filter").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if(!b) return;
+  this.querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
+  b.classList.add("on");
+  state.pair = b.getAttribute("data-pair");
+  applyFilter();
+});
+document.getElementById("prev").addEventListener("click", function(){ state.page--; renderWall(); });
+document.getElementById("next").addEventListener("click", function(){ state.page++; renderWall(); });
+document.getElementById("page-input").addEventListener("change", function(e){
+  var pages = Math.max(1, Math.ceil(filtered.length/PAGE));
+  var v = parseInt(e.target.value, 10);
+  if(isNaN(v)) v = state.page;
+  state.page = Math.min(pages, Math.max(1, v));
+  renderWall();
+  document.getElementById("echo-list").scrollIntoView({behavior:"smooth", block:"start"});
+});
+renderFeatured();
+renderWall();
+
+/* 从千缕图跳来 */
+window.jumpToWall = function(title){
+  document.getElementById("search").value = title;
+  state.q = title; state.pair = "all";
+  applyFilter();
+  document.getElementById("wall").scrollIntoView({behavior:"smooth"});
+};
+
+/* ---------- 卷四：千缕图（弧线图） ---------- */
+function aggregate(pairKey){
+  var map = {};
+  PAIRS.forEach(function(p){
+    if(pairKey==="yb" && p.poetA!=="白居易") return;
+    if(pairKey==="xy" && p.poetA!=="薛涛") return;
+    var key = p.titleA+"‖"+p.titleB;
+    if(!map[key]) map[key] = {tA:p.titleA, tB:p.titleB, poetA:p.poetA, poetB:p.poetB, count:0};
+    map[key].count++;
+  });
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.count-a.count;});
+}
+var AGG = { yb: aggregate("yb"), xy: aggregate("xy") };
+
+var chart = echarts.init(document.getElementById("chart"));
+var threadState = { pair:"yb", n:40 };
+
+function renderThreads(){
+  var top = AGG[threadState.pair].slice(0, threadState.n);
+  /* 收集两侧诗与权重 */
+  var sideA = {}, sideB = {};
+  top.forEach(function(e){
+    sideA[e.tA]=(sideA[e.tA]||0)+e.count;
+    sideB[e.tB]=(sideB[e.tB]||0)+e.count;
+  });
+  var listA = Object.keys(sideA).sort(function(a,b){return sideB[b]-sideB[a]||sideA[b]-sideA[a];});
+  listA.sort(function(a,b){return sideA[b]-sideA[a];});
+  var listB = Object.keys(sideB).sort(function(a,b){return sideB[b]-sideB[a];});
+
+  var H = 560, pad = 30;
+  function ys(list){
+    var m = {};
+    if(list.length===1){ m[list[0]] = H/2; return m; }
+    list.forEach(function(t,i){ m[t] = pad + (H-2*pad)*i/(list.length-1); });
+    return m;
+  }
+  var yA = ys(listA), yB = ys(listB);
+  var maxW = 1;
+  listA.concat(listB).forEach(function(t){ maxW=Math.max(maxW,(sideA[t]||0),(sideB[t]||0)); });
+
+  var poetA = threadState.pair==="yb" ? "白居易" : "薛涛";
+  var poetB = threadState.pair==="yb" ? "元稹" : "鱼玄机";
+
+  var nodes = [], edges = [];
+  listA.forEach(function(t){
+    nodes.push({
+      name:"A:"+t, value:[210, yA[t]], fixed:true,
+      symbolSize: 5 + 16*Math.sqrt(sideA[t]/maxW),
+      itemStyle:{color:POET_COLOR[poetA]},
+      label:{show:true, position:"left", fontSize:10, color:"#5a544a",
+             formatter: t.length>9 ? t.slice(0,9)+"…" : t},
+      poemTitle:t
+    });
+  });
+  listB.forEach(function(t){
+    nodes.push({
+      name:"B:"+t, value:[910, yB[t]], fixed:true,
+      symbolSize: 5 + 16*Math.sqrt(sideB[t]/maxW),
+      itemStyle:{color:POET_COLOR[poetB]},
+      label:{show:true, position:"right", fontSize:10, color:"#5a544a",
+             formatter: t.length>9 ? t.slice(0,9)+"…" : t},
+      poemTitle:t
+    });
+  });
+  top.forEach(function(e){
+    edges.push({
+      source:"A:"+e.tA, target:"B:"+e.tB,
+      lineStyle:{
+        color:"#b03a2e",
+        opacity: 0.12 + 0.5*Math.sqrt(e.count/maxW),
+        width: 0.6 + 2.2*Math.sqrt(e.count/maxW),
+        curveness: 0.55
+      },
+      count:e.count, tA:e.tA, tB:e.tB
+    });
+  });
+
+  chart.setOption({
+    animationDuration: 900,
+    grid:{left:0,right:0,top:0,bottom:0},
+    xAxis:{show:false,min:0,max:1120},
+    yAxis:{show:false,min:0,max:H,inverse:true},
+    tooltip:{
+      backgroundColor:"rgba(43,43,43,.88)",
+      textStyle:{color:"#f5f0e6",fontFamily:"inherit"},
+      formatter:function(p){
+        if(p.dataType==="edge"){
+          return "《"+p.data.tA+"》<br>《"+p.data.tB+"》<br>应和 <b>"+p.data.count+"</b> 次";
+        }
+        return "《"+p.data.poemTitle+"》";
+      }
+    },
+    series:[{
+      type:"graph", layout:"circular",
+      coordinateSystem:"cartesian2d",
+      data:nodes, links:edges,
+      force:{repulsion:0},
+      edgeSymbol:["none","none"],
+      emphasis:{focus:"adjacency", lineStyle:{opacity:.85, width:3}},
+      zlevel:1
+    }]
+  }, true);
+}
+document.getElementById("thread-toggle").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if(!b) return;
+  this.querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
+  b.classList.add("on");
+  threadState.pair = b.getAttribute("data-pair");
+  renderThreads();
+});
+document.getElementById("thread-count").addEventListener("input", function(e){
+  threadState.n = +e.target.value;
+  document.getElementById("thread-count-label").textContent = e.target.value + " 缕";
+  renderThreads();
+});
+chart.on("click", function(p){
+  if(p.dataType==="edge"){ window.jumpToWall(p.data.tA); }
+  else if(p.dataType==="node"){ window.jumpToWall(p.data.poemTitle); }
+});
+window.addEventListener("resize", function(){ chart.resize(); });
+
+/* 千缕图进入视野时才初始化，避免过早计算 */
+var chartInit = false;
+var io3 = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting && !chartInit){ chartInit=true; renderThreads(); }
+  });
+},{threshold:.15});
+io3.observe(document.getElementById("threads"));
+
+/* ---------- 卷五：附录 ---------- */
+(function(){
+  var stats = {};
+  POEMS.forEach(function(pm){
+    if(!stats[pm.poet]) stats[pm.poet] = {poems:0, lines:0, echo:0};
+    stats[pm.poet].poems++;
+    stats[pm.poet].lines += pm.lines.length;
+  });
+  PAIRS.forEach(function(p){
+    if(stats[p.poetA]) stats[p.poetA].echo++;
+    if(stats[p.poetB]) stats[p.poetB].echo++;
+  });
+  var bios = {
+    "白居易":"字乐天，晚号香山居士。诗尚平易，老妪能解，与元稹唱和近千首，世称「元白」。",
+    "元稹":"字微之。新乐府运动主将，与白居易「同年同拜校书郎」，生死唱和，情深一往。",
+    "薛涛":"字洪度。蜀中才女，创薛涛笺。花开不同赏，花落不同悲。",
+    "鱼玄机":"字幼微。长安才女，易求无价宝，难得有情郎。"
+  };
+  var order = ["白居易","元稹","薛涛","鱼玄机"];
+  var html = "";
+  order.forEach(function(poet){
+    var s = stats[poet] || {poems:0,lines:0,echo:0};
+    html += '<div class="pcard">'
+      + '<div class="imgbox"><img src="assets/'+poet+'.jpg" alt="'+poet+'"></div>'
+      + '<div class="body">'
+      + '<h3>'+poet+'</h3>'
+      + '<div class="colorline" style="background:'+POET_COLOR[poet]+'"></div>'
+      + '<p>'+bios[poet]+'</p>'
+      + '<div class="stat">存诗 <b>'+s.poems.toLocaleString()+'</b> 首 · 参与应和 <b>'+s.echo.toLocaleString()+'</b> 句</div>'
+      + '</div></div>';
+  });
+  document.getElementById("poet-cards").innerHTML = html;
+
+  document.getElementById("data-note").innerHTML =
+    "本卷据课程作业互文标注数据织成：白居易 ↔ 元稹 共 37,001 对诗句互文，薛涛 ↔ 鱼玄机 共 30 对；"
+    +"凡两句共享之字，皆以朱砂标出，是为「互文」之处。";
+})();
+
+})();
+</script>
+</body>
+</html>
